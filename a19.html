@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang='en'>
+<!--
+  Taken from:
+  https://stackoverflow.com/a/10476415
+-->
+<head>
+   <meta charset='utf-8'>
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <title>Admin App Layout</title>
+
+   <!-- CSS Reset -->
+   <style type='text/css'>
+      html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+         margin: 0;
+         padding: 0;
+         border: 0;
+         font-size: 100%;
+         font: inherit;
+         vertical-align: baseline;
+      }
+
+      /* HTML5 display-role reset for older browsers */
+      article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+         display: block;
+      }
+
+      body {
+         line-height: 1;
+      }
+
+      ol, ul {
+         list-style: none;
+      }
+
+      blockquote, q {
+         quotes: none;
+      }
+
+      blockquote::before, blockquote::after, q::before, q::after {
+         content: '';
+         content: none;
+      }
+
+      table {
+         border-collapse: collapse;
+         border-spacing: 0;
+      }
+   </style>
+
+   <!-- Page Layout. Taken from: https://stackoverflow.com/a/10476415 -->
+   <style type='text/css'>
+      /*
+      There are a few corresponding values that need to match in different classes. We could use CSS variables, but those
+      aren't supported in IE 11. Not that we are aiming to support IE 11, but so far, everything works in it. So the CSS
+      variables don't buy us much, so we're not going to use them.
+      */
+
+      .header {
+         background-color: #00AADE;
+         height: 65px; /* This value needs to match the value in the .wrapper class. */
+         overflow: hidden;
+         position: absolute;
+         width: 100%;
+      }
+
+      .wrapper {
+         position: absolute;
+         top: 65px; /* This value needs to match the value in the .header class. */
+         bottom: 0px;
+         width: 100%;
+      }
+
+      .content {
+         background: #f8f8f8;
+         width: calc(100% - 250px); /* This is the expanded size. It needs to match the value in the .nav class. */
+         height: 100%;
+         float: left;
+         overflow: auto;
+      }
+
+      .contentForHoverNav {
+         margin-left: 50px;
+      }
+
+      .contentMin {
+         width: calc(100% - 50px); /* This is the minimized size. It needs to match the value in the .navMin class. */
+      }
+
+      .app {
+         margin: 5px 0px 0px 5px;
+      }
+
+      .nav {
+         background: #eaeaea;
+         width: 250px; /* This is the expanded size. It needs to match the value in the .content class. */
+         height: 100%;
+      }
+
+      /* When we want the nav to be inline with the rest of the content. In other words, it won't appear on top
+      of other elements. */
+      .navInline {
+         float: left;
+      }
+
+      .navHover {
+         position: absolute;
+         z-index: 1;
+      }
+
+      .navMin {
+         width: 50px; /* This is the minimized size. It needs to match the value in the .contentMin class. */
+      }
+
+      .navScrollContainer {
+         width: 100%;
+         height: 100%;
+         overflow-y: auto;
+         overflow-x: hidden;
+      }
+   </style>
+
+   <!-- Side Nav and Submenus -->
+   <style type='text/css'>
+      /* In order to get vertically centered text that also wraps and stays centered when the nav is collapsed,
+      we need to use table layout and a special wrapper div. So three elements total. And then when changing the
+      width of the nav, we need to also change the width of the wrapper div and table. Using the table layout
+      unfortunately also means we can't get overflow to show ellipsis. */
+      .navItem {
+         height: 60px;
+         cursor: pointer;
+         width: 250px;
+         overflow: hidden;
+         padding-left: 5px;
+         border-left: 3px solid transparent;
+      }
+
+      .navItemSelected {
+         border-left-color: #00AADE;
+      }
+
+      .navItemMin {
+         width: 50px !important;
+         font-size: small;
+      }
+
+      .navItem > div {
+         width: 220px;
+         height: 60px;
+         display: table;
+      }
+
+      .navItem > div > div {
+         display: table-cell;
+         vertical-align: middle;
+        xheight: 100%;
+         xwidth: 100%;
+      }
+
+      /* Note, this is purposefully not a :hover selector because we need the style to persist while the sub-menu is showing. */
+      .navItem.hover {
+         background-color: rgba(220, 220, 220, 0.99);
+      }
+
+      .accordionMenu {
+         background-color: rgba(228, 228, 228, 0.99);
+         padding: 0px 0px 0px 5px;
+         border-left: 5px solid rgba(0, 0, 0, 0.2);
+      }
+
+      .accordionMenu .navItem:hover {
+         background-color: rgba(220, 220, 220, 0.99);
+      }
+
+      .subMenu {
+         width: 250px;
+         background-color: white;
+         padding: 5px;
+         box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+         border-radius: 5px;
+         position: absolute;
+         z-index: 9;
+         display: none;
+         overflow: auto;
+      }
+
+      .subMenuHeader {
+         font-weight: bolder;
+         padding: 5px 0px 5px 0px;
+         border-bottom: 1px solid black;
+         margin-bottom: 5px;
+      }
+
+      .subMenu div:not(.subMenuHeader) {
+         padding: 5px 0px 5px 0px;
+         cursor: pointer;
+      }
+
+      .subMenu div:not(.subMenuHeader):hover {
+         background-color: rgba(245, 245, 245, 0.99);
+      }
+   </style>
+
+   <!-- Scrollbars -->
+   <style type='text/css'>
+      /* For Firefox */
+      .nav-scrollbar {
+         scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+         scrollbar-width: thin;
+      }
+
+      /* Works on Chrome, Edge, and Safari */
+      .nav-scrollbar::-webkit-scrollbar {
+         width: 20px;
+         height: 18px;
+      }
+
+      .nav-scrollbar::-webkit-scrollbar-corner {
+         background: transparent;
+      }
+
+      .nav-scrollbar::-webkit-scrollbar-thumb {
+         border: 6px solid transparent;
+         background: rgba(0, 0, 0, 0.2);
+         border-radius: 10px;
+         background-clip: padding-box;
+      }
+
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .noScrollbar::-webkit-scrollbar {
+         display: none;
+      }
+
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .noScrollbar {
+         -ms-overflow-style: none; /* IE and Edge */
+         scrollbar-width: none; /* Firefox */
+      }
+   </style>
+
+   <script src="../../jquery-3.6.0.min.js" type="text/javascript"></script>
+
+
+</head>
+<body>
+   <div class="header">
+      Header
+   </div>
+
+   <div class="wrapper">
+
+      <div class="nav">
+         <div style="height: 100%; width: 100%; position: relative;">
+            <!--
+
+                 &#x2600; is a sun
+                 &#x21C4; is right and left arrows, which can be used to represent expand/collapse.
+                 https://www.w3schools.com/charsets/ref_utf_arrows.asp
+
+                 https://www.w3schools.com/charsets/ref_utf_symbols.asp
+                 &#x2630; is the "hamburger menu", or in this case called TRIGRAM FOR HEAVEN
+                 &#x26ED; is "gear without hub"
+            -->
+            <div id="navSettings" data-sub="subNavSettings" title="Menu Settings" style="height: 21px; position: absolute; top: 0; left: 2px; cursor: pointer; padding: 5px 5px 0px 0px;">&#x26ED;</div>
+            <div id="navExpandControl" title="Expand/Collapse" style="height: 21px; position: absolute; top: -2px; right: 0; cursor: pointer; padding: 5px 5px 0px 0px;">&#x21C4;</div>
+            <div style="position: absolute; top: 21px; bottom: 0; width: 100%;">
+               <div class="navScrollContainer nav-scrollbar">
+                  <div class="navItem"><div><div>Home</div></div></div>
+
+
+
+
+
+                  <div class="navItem"><div><div>Acce</div></div></div>
+                  <div class="navItem"><div><div>Appliance Management</div></div></div>
+                  <div class="navItem"><div><div>1 Home is not where the heart is and more to wrap</div></div></div>
+                  <div class="navItem"><div><div>2 Home is not where the heart is and more to wrap</div></div></div>
+                  <div class="navItem"><div><div>3 Home is not where the heart is and more to wrap</div></div></div>
+                  <div class="navItem"><div><div>4 Home is not where the heart is and more to wrap</div></div></div>
+                  <div class="navItem"><div><div>5 Home is not where the heart is and more to wrap</div></div></div>
+                  <div class="navItem"><div><div>Access Requests</div></div></div>
+                  <div class="navItem" data-sub="subApplianceManagement"><div><div>Appliance Management</div></div></div>
+                  <div class="navItem" data-sub="subAssetManagement"><div><div>Asset Management</div></div></div>
+                  <div class="navItem"><div><div>Security Policy Management Really long</div></div></div>
+                  <div class="navItem" style="height: 1400px;"><div><div>User Management</div></div></div>
+                  <div class="navItem"><div><div>Reports</div></div></div>
+               </div>
+            </div>
+         </div>
+      </div><!-- End Nav -->
+
+      <div class="content">
+         <div class="app">
+            Main content of page.<br />
+            Need to figure out how to add some padding to the top and left.<br />
+            Adding margin or padding to either the nav or content causes the content to wrap. It would suck to have to add yet another container, but ultimately we're going to have then any ways, so might as well see how they behave.
+            <p>1 line</p>
+            <p>2 line</p>
+            <p>3 line</p>
+            <p>4 line</p>
+            <p>5 line</p>
+            <p>6 line</p>
+            <p>7 line</p>
+            <p>8 line</p>
+            <p>9 line</p>
+            <p>10 line</p>
+            <p>11 line</p>
+            <p>12 line</p>
+            <p>13 line</p>
+            <p>14 line</p>
+            <p>15 line</p>
+            <p>16 line</p>
+            <p>17 line</p>
+            <p>18 line</p>
+            <p>19 line</p>
+            <p>20 line</p>
+            <p>21 line</p>
+            <p>22 line</p>
+            <p>23 line</p>
+            <p>24 line</p>
+            <p>25 line</p>
+            <p>26 line</p>
+            <p>27 line</p>
+            <p>28 line</p>
+            <p>29 line</p>
+            <p>30 line</p>
+            <p>31 line</p>
+            <p>32 line</p>
+            <p>33 line</p>
+            <p>34 line</p>
+            <p>35 line</p>
+            <p>36 line</p>
+            <p>37 line</p>
+            <p>38 line</p>
+            <p>39 line</p>
+            <p>40 line</p>
+            <p>41 line</p>
+            <p>42 line</p>
+            <p>43 line</p>
+            <p>44 line</p>
+         </div>
+      </div><!-- End Content -->
+
+   </div><!-- End Wrapper -->
+
+   <div id="footer" style="position:absolute; bottom:0; width:100%; height:0px; overflow: auto;">
+      <!--
+      If needed, this can be displayed. Like for example, showing log messages or statuses.
+      Whatever is specified as the height would then also have to be set as the 'bottom' value
+      of the wrapper DIV element.
+      -->
+   </div>
+
+   <!-- In order for the overflow style of the nav area to not consider these as part of its own content,
+   and therefore cause overflow with scrollbars, we must place them outside of the nav element. -->
+   <div id="subApplianceManagement" class="subMenu nav-scrollbar">
+      <div class="subMenuHeader">Appliance Management</div>
+      <div>Appliance</div>
+      <div>Backup and Retention</div>
+      <div>Certificates</div>
+      <div>Cluster</div>
+      <div>Enable or Disable Services is a long menu text to see what happens with the width and scrolling</div>
+      <div>External Integration</div>
+      <div>Real-Time Reports</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>{id}/RetrievableAccounts/{accountId}/ApiKey</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+      <div>Safeguard Access</div>
+      <div>Search</div>
+   </div>
+
+   <div id="subAssetManagement" class="subMenu nav-scrollbar">
+      <div>Account Automation</div>
+      <div>Accounts</div>
+      <div>Assets</div>
+      <div>Partitions</div>
+      <div>Discovery</div>
+      <div>Profiles</div>
+      <div>Tags</div>
+      <div>Connect and Platforms</div>
+   </div>
+
+   <!--<div class="accordionMenu">
+      <div class="navItem"><div><div>Sub 1</div></div></div>
+      <div class="navItem"><div><div>Sub 2</div></div></div>
+      <div class="navItem"><div><div>Sub 3</div></div></div>
+      <div class="navItem"><div><div>Sub 4</div></div></div>
+
+   </div>-->
+
+   <div id="subNavSettings" class="subMenu nav-scrollbar">
+      <fieldset style="border: 1px solid black; padding: 5px;">
+         <legend style="padding: 0px 5px 0px 5px;">Menu Style When Expanded</legend>
+
+         <input type="radio" name="menuStyle" id="menuStyleFlyout" value="1" checked /><label for="menuStyleFlyout">&nbsp;Flyout</label>
+         <br />
+         <input type="radio" name="menuStyle" id="menuStyleAccordion" value="2" /><label for="menuStyleAccordion">&nbsp;Accordion</label>
+         <br />
+         <input type="radio" name="menuStyle" id="menuStyleManual" value="3" /><label for="menuStyleManual">&nbsp;Manual</label>
+      </fieldset>
+      <br />
+      <div><input type="checkbox" id="expandOnHoverCheckBox" /><label for="expandOnHoverCheckBox">&nbsp;Expand/Collapse on Hover</label></div>
+   </div>
+
+   <script type="text/javascript">
+      var MenuStyle = { Flyout: 1, Accordion: 2, Manual: 3 };
+
+      var menuStyle = MenuStyle.Flyout;
+      var currentSubMenu = null;
+      var headerHeight = 65;
+      var navDisplayExpanded = true;
+      var navExpandOnHover = false;
+      var mouseIsOverSideNav = false;
+
+      var nav = $(".nav");
+      var navScrollContainer = $(".navScrollContainer");
+      var contentContainer = $(".content");
+      var navExpandDiv = $("#navExpandControl");
+
+      $("#expandOnHoverCheckBox").on("click", ExpandOnHoverCheckBox_OnClick);
+
+      window.onload = function() {
+         RenderMenuItems();
+         ExpandOnHoverCheckBox_OnClick();
+      };
+
+      navExpandDiv.on("click", function() {
+         if (navDisplayExpanded) {
+            Nav_OnMouseOut(this);
+            contentContainer.addClass("contentMin");
+         }
+         else {
+            Nav_OnMouseOver();
+            contentContainer.removeClass("contentMin");
+         }
+
+         navDisplayExpanded = !navDisplayExpanded;
+      });
+
+      $("#navSettings").on("mouseover", MenuItem_OnMouseOver);
+      $("#navSettings").on("mouseout", MenuItem_OnMouseOut);
+
+      $("#subNavSettings input:radio").on("click", MenuStyle_OnClick);
+
+      $(".subMenu").mouseover(function() {
+         StopTimeout($(this));
+         mouseIsOverSideNav = false;
+      });
+
+      $(".subMenu").mouseout(function() {
+         StartTimeout(currentSubMenu);
+      });
+
+      function MenuItem_OnMouseOver() {
+         console.log("context menu on mouse over...");
+         var mainMenuItem = $(this);
+         var subMenuId = mainMenuItem.attr("data-sub");
+
+         var subMenu = $("#" + subMenuId);
+
+         mainMenuItem.addClass("hover");
+
+         // If the main menu item doesn't have any submenus to be displayed, simply hide the previous submenu.
+         if (!subMenu.length) {
+            HideSubmenu(currentSubMenu);
+            currentSubMenu = null;
+            return;
+         }
+
+         if (subMenu.is(":visible")) {
+            StopTimeout(subMenu);
+
+            return;
+         }
+
+         if (currentSubMenu !== null && currentSubMenu.attr("id") !== subMenu.attr("id")) {
+            HideSubmenu(currentSubMenu);
+         }
+
+         var subMenuHeight = subMenu.outerHeight();
+         var windowHeight = $(window).height();
+
+         var offset = mainMenuItem.offset();
+
+         console.log("original menu height: " + subMenuHeight);
+
+         if (subMenuHeight > windowHeight) {
+            subMenuHeight = windowHeight - headerHeight - 20;
+         }
+
+         subMenu.css("height", subMenuHeight);
+
+         var left = offset.left;
+
+         if (mainMenuItem.parent().hasClass("navScrollContainer")) {
+            left += navScrollContainer.width();
+         }
+         else {
+            // Special case for the left nav settings icon.
+            left += 20;
+         }
+
+         console.log("offset.top: " + offset.top + ", window: " + windowHeight + ", menu: " + subMenuHeight);
+         if (subMenuHeight + offset.top > windowHeight) {
+            var diff = (subMenuHeight + offset.top) - windowHeight
+            offset.top -= diff + 20;
+         }
+         subMenu.css("top", offset.top).css("left", left).show();
+         subMenu.data("parent", mainMenuItem);
+
+         currentSubMenu = subMenu;
+      }
+
+      function MenuItem_OnMouseOut() {
+         if (!currentSubMenu) {
+            $(this).removeClass("hover");
+         }
+
+         StartTimeout(currentSubMenu);
+      }
+
+      function MenuItem_OnClick() {
+         if (menuStyle == MenuStyle.Flyout) {
+            return;
+         }
+
+         if (menuStyle == MenuStyle.Accordion) {
+
+         }
+         else {
+
+         }
+      }
+
+      function StopTimeout(menu) {
+         if (!menu) {
+            return;
+         }
+
+         if (menu.data("hideTimer")) {
+            clearTimeout(menu.data("hideTimer"));
+            menu.data("hideTimer", null);
+         }
+      }
+
+      function StartTimeout(menu) {
+         if (!menu) {
+            return;
+         }
+
+         if (!menu.data("hideTimer")) {
+            menu.data("hideTimer", setTimeout(function() {
+               HideSubmenu(menu);
+            }, 200));
+         }
+      }
+
+      function HideSubmenu(menu) {
+         if (!menu || !menu.is(":visible")) {
+            return;
+         }
+
+         menu.hide();
+         menu.css("height", "");
+         menu.data("parent").removeClass("hover");
+
+         if (menu.data("hideTimer")) {
+            clearTimeout(menu.data("hideTimer"));
+            menu.data("hideTimer", null);
+         }
+
+         if (navExpandOnHover && !mouseIsOverSideNav && !nav.hasClass("navMin")) {
+            // The side nav is still expanded. Close it...well, this will only work properly if the mouse isn't still
+            // over the side nav.
+            Nav_OnMouseOut();
+            console.log("hide sub menu...");
+         }
+      }
+
+      function ExpandOnHoverCheckBox_OnClick() {
+         if ($("#expandOnHoverCheckBox").prop("checked")) {
+            navExpandOnHover = true;
+
+            // First, make the side nav div use absolute positioning, so that when we change its width, it will be
+            // rendered overtop of other elements.
+            nav.addClass("navHover");
+            nav.removeClass("navInline");
+            nav.addClass("navMin");
+
+            // Since we start off with the side nav having the minimum width, we don't show scrollbars for that.
+            navScrollContainer.addClass("noScrollbar");
+
+            // Since we start off with the side nav having the minimum width, the content area needs to be expanded.
+            // Its width calculation is based on the hard coded CSS width value of the side nav.
+            contentContainer.addClass("contentMin");
+
+            // Since the side nav is now absolutely positioned and taken out of the document flow, we don't want the
+            // content being rendered behind it. So we move it over the width of the collapsed side nav.
+            contentContainer.addClass("contentForHoverNav");
+
+            navExpandDiv.hide();
+
+            if (menuStyle == MenuStyle.Flyout) {
+               $(".navScrollContainer > div").off("mouseover mouseout");
+            }
+
+            // Wire up the actual events to expand and collapse the side nav. Because the side nav is not positioned
+            // with absolute positioning, when we change its width, it will render overtop of the main content.
+            nav.on("mouseover", Nav_OnMouseOver);
+            nav.on("mouseout", Nav_OnMouseOut);
+
+            Nav_OnMouseOut();
+         }
+         else {
+            navExpandOnHover = false;
+
+            nav.removeClass("navHover");
+            nav.addClass("navInline");
+            nav.removeClass("navMin");
+            navScrollContainer.removeClass("noScrollbar");
+            contentContainer.removeClass("contentMin");
+            contentContainer.removeClass("contentForHoverNav");
+            navExpandDiv.show();
+
+            if (menuStyle == MenuStyle.Flyout) {
+               $(".navScrollContainer > div").on("mouseover", MenuItem_OnMouseOver);
+               $(".navScrollContainer > div").on("mouseout", MenuItem_OnMouseOut);
+            }
+
+            nav.off("mouseover mouseout");
+
+            navDisplayExpanded = true;
+         }
+      }
+
+      function Nav_OnMouseOver(event) {
+         console.log("nav onmouseover...");
+
+         var firstExpansion = nav.hasClass("navMin");
+
+         mouseIsOverSideNav = true;
+         nav.removeClass("navMin");
+         navScrollContainer.removeClass("noScrollbar");
+         $(".navItem, .navItem > div").removeClass("navItemMin");
+
+         if (navExpandOnHover) {
+            $(".navScrollContainer > div").on("mouseover", MenuItem_OnMouseOver);
+            $(".navScrollContainer > div").on("mouseout", MenuItem_OnMouseOut);
+         }
+
+         if (firstExpansion && event != null && menuStyle == MenuStyle.Flyout) {
+            // The mouseover event used to open the side nav essentially "eats up" the event that would be needed
+            // to open the flyout menu. So we'll try causing another event for the element at the mouse's location.
+            var e = event.toElement || event.relatedTarget;
+            console.log("element under mouseover...");
+            console.log(e);
+            $(e).trigger("mouseover");
+         }
+      }
+
+      function Nav_OnMouseOut(event) {
+         console.log("nav onmouseout...");
+         //console.log(event);
+         if (event == navExpandDiv) {
+            return;
+         }
+
+         if (event != null) {
+            var e = event.toElement || event.relatedTarget;
+            //console.log(e);
+            //console.log(this);
+            if ($(e).parents(".nav").length > 0 || $(e) == navExpandDiv || $(e).hasClass("subMenu") || $(e).parents(".subMenu").length > 0 || e == this) {
+               mouseIsOverSideNav = true;
+               console.log("mouse is still over side nav...");
+               return;
+            }
+         }
+
+         nav.addClass("navMin");
+         navScrollContainer.addClass("noScrollbar");
+         $(".navItem, .navItem > div").addClass("navItemMin");
+
+         if (navExpandOnHover) {
+            $(".navScrollContainer > div").off("mouseover mouseout");
+         }
+
+         mouseIsOverSideNav = false;
+      }
+
+      function MenuStyle_OnClick() {
+         menuStyle = $(this).val();
+      }
+
+      function RenderMenuItems() {
+         navScrollContainer.empty();
+
+         navScrollContainer.append(Template.tmpl("accordionMenuTemplate", menus));
+
+         navScrollContainer.find("> .navItem").on("click", function() {
+            console.log("click");
+
+            var sub = $(this).find("+ .accordionMenu").first();
+
+            if (sub != null) {
+               sub.slideToggle();
+            }
+         });
+      }
+
+      var menus = [
+         { text: "Home", link: "", items: [] },
+         {
+            text: "Access Requests",
+            link: "",
+            items: [
+               { text: "My Requests", link: "" },
+               { text: "Approvals", link: "" },
+               { text: "Reviews", link: "" }
+            ]
+         },
+         {
+            text: "Appliance Management",
+            link: "",
+            items: [
+               { text: "Appliance", link: "" },
+               { text: "Backup and Retention", link: "" },
+               { text: "Certificates", link: "" },
+               { text: "Cluster", link: "" },
+               { text: "Enable or Disable Services", link: "" },
+               { text: "External Integration", link: "" },
+               { text: "Real-Time Reports", link: "" },
+               { text: "Safeguard Access", link: "" },
+               { text: "Search", link: "" }
+            ]
+         },
+         {
+            text: "Asset Management",
+            link: "",
+            items: [
+               { text: "Account Automation", link: "" },
+               { text: "Accounts", link: "" },
+               { text: "Assets", link: "" },
+               { text: "Partitions", link: "" },
+               { text: "Discovery", link: "" },
+               { text: "Profiles", link: "" },
+               { text: "Tags", link: "" },
+               { text: "Connect and Platforms", link: "" }
+            ]
+         },
+         {
+            text: "Security Policy Management",
+            link: "",
+            items: [
+               { text: "Access Request Activity", link: "" },
+               { text: "Entitlements", link: "" },
+               { text: "User Groups", link: "" },
+               { text: "Asset Groups", link: "" },
+               { text: "Account Groups", link: "" },
+               { text: "Linked Accounts", link: "" },
+               { text: "Cloud Assistant", link: "" },
+               { text: "Application to Application", link: "" },
+               { text: "Settings", link: "" }
+            ]
+         },
+         {
+            text: "User Management",
+            link: "",
+            items: [
+               { text: "Users", link: "" },
+               { text: "User Groups", link: "" },
+               { text: "Settings", link: "" }
+            ]
+         },
+         {
+            text: "Reports",
+            link: "",
+            items: [
+               { text: "Activity Center", link: "" },
+               { text: "Entitlements", link: "" },
+               { text: "Ownership", link: "" }
+            ]
+         },
+         { text: "Extra 1", link: "", items: [] },
+         { text: "Extra 2", link: "", items: [] },
+         { text: "Extra 3", link: "", items: [] }
+      ];
+
+      // Simple JavaScript Templating
+      // John Resig - http://ejohn.org/ - MIT Licensed
+      var cache = {};
+      var Template =
+      {
+         tmpl: function tmpl(str, data) {
+            // Figure out if we're getting a template, or if we need to
+            // load the template - and be sure to cache the result.
+            var fn = !/\W/.test(str)
+               ? cache[str] = cache[str] || tmpl(document.getElementById(str).innerHTML)
+               :
+               // Generate a reusable function that will serve as a template
+               // generator (and which will be cached).
+               new Function("obj",
+                  "var p=[],print=function(){p.push.apply(p,arguments);};" +
+
+                  // Introduce the data as local variables using with(){}
+                  "with(obj){p.push('" +
+
+                  // Convert the template into pure JavaScript
+                  str
+                     .replace(/[\r\t\n]/g, " ")
+                     .split("<%").join("\t")
+                     .replace(/((^|%>)[^\t]*)'/g, "$1\r")
+                     .replace(/\t=(.*?)%>/g, "',$1,'")
+                     .split("\t").join("');")
+                     .split("%>").join("p.push('")
+                     .split("\r").join("\\'")
+                  + "');}return p.join('');");
+
+            // Provide some basic currying to the user
+            return data ? fn(data) : fn;
+         }
+      }
+
+      function HtmlAttributeEncode(str) {
+         if (str == null) {
+            return "";
+         }
+
+         if (str instanceof Array) {
+            for (var i = 0; i < str.length; i++) {
+               str[i] = HtmlAttributeEncode(str[i]);
+            }
+
+            return str.join();
+         }
+
+         return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+      }
+
+      function HtmlEncode(str) {
+         var div = document.createElement("DIV");
+         var txt = document.createTextNode(str);
+         div.appendChild(txt);
+
+         return div.innerHTML;
+      }
+   </script>
+
+   <script type="text/html" id="flyoutMenuTemplate">
+      <% for (var i = 0; i < menus.length; i++) { %>
+         <div class="navItem"><div><div><%= HtmlEncode(menus[i].text) %></div></div></div>
+      <% } %>
+   </script>
+
+   <script type="text/html" id="accordionMenuTemplate">
+      <% for (var i = 0; i < menus.length; i++) { %>
+         <div class="navItem"><div><div><%= HtmlEncode(menus[i].text) %></div></div></div>
+         <div class="accordionMenu" style="display: none;">
+            <% for (var j = 0; j < menus[i].items.length; j++) { %>
+               <div class="navItem"><div><div><%= HtmlEncode(menus[i].items[j].text) %></div></div></div>
+            <% } %>
+         </div>
+      <% } %>
+   </script>
+</body>
+</html>
